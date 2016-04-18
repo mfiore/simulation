@@ -1,0 +1,26 @@
+<launch>
+
+  <!-- start up empty world -->
+  <arg name="gui" default="true"/>
+  <arg name="paused" default="true"/>
+  <!-- TODO: throttled not implemented in gazebo_ros/empty_world.launch
+  <arg name="throttled" default="false"/>
+  -->
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch"/>
+
+  <!-- start pr2 robot -->
+  <include file="$(find pr2_gazebo)/launch/pr2.launch"/>
+
+
+
+  <include file="$(find pr2_sim_saphari)/launch/pr2_nav.launch"/>
+
+  <include file="$(find pr2_teleop)/launch/teleop_keyboard.launch"/>
+  
+
+
+ 
+
+
+</launch>
