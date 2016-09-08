@@ -1,0 +1,5 @@
+---
+simulated_agents:
+  - HERAKLES_HUMAN1
+  - base_link
+  - bottle

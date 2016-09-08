@@ -1,0 +1,7 @@
+<launch>
+    <!-- start map_server with laas_adream map -->
+    <node name="map_server" pkg="map_server" type="map_server" args="/home/mfior
+e/ros_workspaces/hydro_ws/src/common_launch/laas_adream.yaml"/>
+
+    
+</launch>
