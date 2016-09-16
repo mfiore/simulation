@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   tf
+  situation_assessment_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -86,7 +87,8 @@ set(LIBS ${SDL_LIBRARY})
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES tf_joypad
-  CATKIN_DEPENDS message_generation roscpp rospy std_msgs message_runtime sensor_msgs tf
+  CATKIN_DEPENDS message_generation roscpp rospy std_msgs message_runtime sensor_msgs tf   situation_assessment_msgs
+
 #  DEPENDS system_lib
 )
 

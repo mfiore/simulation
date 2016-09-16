@@ -3,17 +3,22 @@
 #include <sensor_msgs/Joy.h>
 #include <boost/thread.hpp>
 #include "Keyboard.h"
+#include "geometry_msgs/Pose.h"
+#include "situation_assessment_msgs/PutObjectInHand.h"
+#include "situation_assessment_msgs/PlaceObject.h"
 
 using namespace std;
 
 vector<string> tfs;
 vector<double> xtfs;
 vector<double> ytfs;
+vector<double> ztfs;
 
 int selectedTf=0;
 
 Keyboard keyboard;
 
+map<string,string> tf_links_;
 
 #define DEAD_ZONE 0.05
 #define DEAD_ZONE_YAW 0.05
@@ -138,7 +143,7 @@ void sendPosition() {
         
          //ROS_INFO("Tf numero %d",i);
          tf::Transform transform;
-         transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], 0.0) );
+         transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], ztfs[i]) );
          tf::Quaternion q;
 
          q.setRPY(0, 0, 0);
@@ -148,6 +153,43 @@ void sendPosition() {
         r.sleep();
     }
 }
+
+bool putObjectInHand(situation_assessment_msgs::PutObjectInHand::Request& req,
+	situation_assessment_msgs::PutObjectInHand::Response& res) {
+	if (req.has_object) {
+		tf_links[req.tf1]=tf2;
+	}
+	else {
+		tf_links.erase(req.tf1);
+	}
+	res.result=true;
+	return true;
+}
+
+bool placeObject(situation_assessment_msgs::PlaceObject::Request& req,
+	situation_assessment_msgs::PlaceObject::Response& res) {
+
+	int i=0;
+	bool found=false;
+	while (!found && i<tfs.size()) {
+		if (tfs[i]==req.name) {
+			found=true;
+		}
+		else {
+			i++;
+		}
+	}
+	if (found) {
+		xtfs[i]=pose.position.x;
+		ytfs[i]=pose.position.y;
+		ztfs[i]=pose.position.z;
+	}
+	else {
+		req.result=false;
+	}
+	return true;
+}
+
 
 int main (int argc, char** argv) {
 
@@ -165,12 +207,16 @@ int main (int argc, char** argv) {
     for (int i=0; i<tfs.size();i++) {
         xtfs.push_back(0);
         ytfs.push_back(0);
+        ztfs.push_back(0);
         ROS_INFO("- %s",tfs[i].c_str());
     }
     boost::thread kthread(keyboardLoop);
     boost::thread t(sendPosition);
     // ros::Subscriber joy_sub= n.subscribe<sensor_msgs::Joy>("velocity_control", 10, joyCallback);
     ROS_INFO("Subscribed to velocity control");
+   
+    ros::ServiceServer put_object_service=n.advertiseService<situation_assessment_msgs::PutObjectInHand>("/situation_assessment/put_object_in_hand",1000,&putObjectInHand);
+    ros::ServiceServer place_object_service=n.advertiseService<situation_assessment_msgs::PlaceObject>("/situation_assessment/place_object",1000,&placeObject);
     ROS_INFO("Ready");
     ros::spin();
     ros::shutdown();
