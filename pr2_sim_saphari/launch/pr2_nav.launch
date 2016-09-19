@@ -8,7 +8,7 @@
   <include file="$(find pr2_navigation_perception)/ground_plane.xml" />
   <!-- The navigation stack and associated parameters -->
   <include file="$(find pr2_navigation_global)/move_base.xml" />
-    <node name="map_server" pkg="map_server" type="map_server" args="/home/mfiore/openrobots/manips/pr2-scripts/shell-scripts/data/adream_RDC_complet.yaml"/>
+    <node name="map_server" pkg="map_server" type="map_server" args="/home/theworld/openrobots/manips/pr2-scripts/shell-scripts/data/adream_RDC_complet.yaml"/>
      
 </launch>
 

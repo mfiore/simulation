@@ -18,7 +18,7 @@ int selectedTf=0;
 
 Keyboard keyboard;
 
-map<string,string> tf_links_;
+map<string,int> tf_links_;
 
 #define DEAD_ZONE 0.05
 #define DEAD_ZONE_YAW 0.05
@@ -127,6 +127,12 @@ void keyboardLoop() {
 		    	else {
 		    		xtfs[selectedTf]=xtfs[selectedTf]+x;
 		    		ytfs[selectedTf]=ytfs[selectedTf]+y;
+		    		//check links
+		    		if (tf_links_.find(tfs[selectedTf])!=tf_links_.end()) {
+		    			int held_object=tf_links_.at(tfs[selectedTf]);
+		    			xtfs[held_object]=xtfs[selectedTf]+0.1;
+		    			ytfs[held_object]=ytfs[selectedTf]+0.1;
+		    		}
 		    	}
 		    	ros::Duration(0.1).sleep();
 		// }
@@ -139,17 +145,22 @@ void sendPosition() {
     ros::Rate r(10);
     while (ros::ok()) {
         for (int i=0; i<tfs.size(); i++) {
-         static tf::TransformBroadcaster br;
-        
-         //ROS_INFO("Tf numero %d",i);
-         tf::Transform transform;
-         transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], ztfs[i]) );
-         tf::Quaternion q;
+            static tf::TransformBroadcaster br;
+	  	    //ROS_INFO("Tf numero %d",i);
+	 		 tf::Transform transform;
+	  		// if (tf_links_.find(tfs[i])!=tf_links_.end()){
+	  		// 	int other_tf=tf_links_[tfs[i]];
+	  		// 	transform.setOrigin(tf::Vector3(xtfs[other_tf],ytfs[other_tf],ztfs[other_tf]));	
+	  		// }
+	  		// else {
+	    //  	}
+        	transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], ztfs[i]) );
 
-         q.setRPY(0, 0, 0);
-         transform.setRotation(q);
-         br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", tfs[i]));
-        }
+        	tf::Quaternion q;
+		    q.setRPY(0, 0, 0);
+	    	transform.setRotation(q);
+	        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", tfs[i]));
+	    }
         r.sleep();
     }
 }
@@ -157,12 +168,38 @@ void sendPosition() {
 bool putObjectInHand(situation_assessment_msgs::PutObjectInHand::Request& req,
 	situation_assessment_msgs::PutObjectInHand::Response& res) {
 	if (req.has_object) {
-		tf_links[req.tf1]=tf2;
+		int object_index=0;
+		int agent_index=0;
+		bool found_agent=false;
+		bool found_object=false;
+		while (!found_agent && agent_index<tfs.size()) {
+			if (tfs[agent_index]==req.agent) {
+				found_agent=true;
+			}
+			else agent_index++;
+		}
+		while (!found_object && object_index<tfs.size()) {
+			if (tfs[object_index]==req.object) {
+				found_object=true;
+			}
+			else object_index++;
+		}
+		if (found_object && found_agent) {
+			tf_links_[req.agent]=object_index;			
+			res.result=true;
+			xtfs[object_index]=xtfs[agent_index]+0.1;
+			ytfs[object_index]=ytfs[agent_index]+0.1;
+			ztfs[object_index]=ztfs[agent_index];
+		}
+		else {
+			res.result=false;
+		}
+
 	}
 	else {
-		tf_links.erase(req.tf1);
+		tf_links_.erase(req.object);
+		res.result=true;
 	}
-	res.result=true;
 	return true;
 }
 
@@ -180,12 +217,13 @@ bool placeObject(situation_assessment_msgs::PlaceObject::Request& req,
 		}
 	}
 	if (found) {
-		xtfs[i]=pose.position.x;
-		ytfs[i]=pose.position.y;
-		ztfs[i]=pose.position.z;
+		xtfs[i]=req.pose.position.x;
+		ytfs[i]=req.pose.position.y;
+		ztfs[i]=req.pose.position.z;
+		res.result=true;
 	}
 	else {
-		req.result=false;
+		res.result=false;
 	}
 	return true;
 }
@@ -203,7 +241,7 @@ int main (int argc, char** argv) {
     n.getParam("situation_assessment/robot_name",robot_name);
     ROS_INFO("robot name is %s",robot_name.c_str());
 
-    ROS_INFO("Got %d agents",tfs.size());
+    ROS_INFO("Got %ld agents",tfs.size());
     for (int i=0; i<tfs.size();i++) {
         xtfs.push_back(0);
         ytfs.push_back(0);
@@ -215,8 +253,8 @@ int main (int argc, char** argv) {
     // ros::Subscriber joy_sub= n.subscribe<sensor_msgs::Joy>("velocity_control", 10, joyCallback);
     ROS_INFO("Subscribed to velocity control");
    
-    ros::ServiceServer put_object_service=n.advertiseService<situation_assessment_msgs::PutObjectInHand>("/situation_assessment/put_object_in_hand",1000,&putObjectInHand);
-    ros::ServiceServer place_object_service=n.advertiseService<situation_assessment_msgs::PlaceObject>("/situation_assessment/place_object",1000,&placeObject);
+    ros::ServiceServer put_object_service=n.advertiseService("/situation_assessment/put_object_in_hand",putObjectInHand);
+    ros::ServiceServer place_object_service=n.advertiseService("/situation_assessment/place_object",placeObject);
     ROS_INFO("Ready");
     ros::spin();
     ros::shutdown();
