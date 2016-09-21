@@ -1,5 +1,83 @@
 ---
-simulated_agents:
-  - HERAKLES_HUMAN1
-  - base_link
-  - bottle
+simulation:
+  simulated_entities:
+    - human1
+    - base_link
+    - waterbottle
+    - teabottle
+    - mug
+    - table
+    - sidetable
+    - bathroom
+    - outside
+    - shelf1
+    - shelf2
+    - shelf3
+    - sofa
+  starting_position:
+    human1:
+      x: 0
+      y: 0
+      z: 0
+    base_link:
+      x: 0
+      y: 0
+      z: 0
+    waterbottle:
+      x: 1
+      y: 1
+      z: 0
+    teabottle:
+      x: -1
+      y: 1
+      z: 0
+    table:
+      x: 0
+      y: 2
+      z: 0
+    sidetable:
+      x: -1
+      y: 2
+      z: 0   
+    mug:
+      x: -1
+      y: 2
+      z: 0
+    bathroom:
+      x: -2
+      y: 0
+      z: 0
+    outside:
+      x: 2
+      y: 0
+      z: 0
+    shelf1:
+      x: 1
+      y: -1
+      z: 0
+    shelf2:
+      x: 1
+      y: 1
+      z: 0
+    shelf3:
+      x: -1
+      y: 1
+      z: 0
+    sofa:
+      x: 0
+      y: 2
+      z: 0  
+  movable:
+    human1: true
+    base_link: false
+    waterbottle: false
+    teabottle: false
+    mug: false
+    table: false
+    sidetable: false
+    bathroom: false
+    outside: false
+    shelf1: false
+    shelf2: false
+    shelf3: false
+    sofa: false

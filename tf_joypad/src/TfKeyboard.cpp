@@ -19,6 +19,7 @@ int selectedTf=0;
 Keyboard keyboard;
 
 map<string,int> tf_links_;
+map<string,bool> movable_;
 
 #define DEAD_ZONE 0.05
 #define DEAD_ZONE_YAW 0.05
@@ -71,6 +72,21 @@ double threshold(double x, double x_s) {
         return 0.0;
 }
 
+
+int getNextIndex(int starting_index) {
+
+	int i=starting_index==tfs.size()-1?0:starting_index+1;
+	bool found=movable_.at(tfs[i]);
+	int count=tfs.size();
+	while (!found && count>0) {
+		i=i==tfs.size()-1?0:i+1;
+		found=movable_.at(tfs[i]);
+		count--;
+	}
+	if (found) return i;
+	else return -1;
+
+}
 void keyboardLoop() {
 	bool pressed,new_event;
 	uint16_t k, mod;
@@ -83,7 +99,7 @@ void keyboardLoop() {
 		        case (SDLK_PAGEUP):
 		        {
 		        	if (pressed) {
-		        		selectedTf=selectedTf==tfs.size()-1?0:selectedTf+1;
+		        		selectedTf=getNextIndex(selectedTf);
 		        		ROS_INFO("TFKEYBOARD - switching to %s",tfs[selectedTf].c_str());
 		        	}
 		            break;
@@ -119,19 +135,23 @@ void keyboardLoop() {
 		    }
 		    	if (select_all) {
 		    		for (int i=0; i<tfs.size();i++) {
-		    			xtfs[i]=xtfs[i]+x;
-		       			ytfs[i]=ytfs[i]+y;
+		    			if (movable_[tfs[i]]) {
+		    				xtfs[i]=xtfs[i]+x;
+		       				ytfs[i]=ytfs[i]+y;
+		       			}
 		       		}
 		    
 		    	}
 		    	else {
-		    		xtfs[selectedTf]=xtfs[selectedTf]+x;
-		    		ytfs[selectedTf]=ytfs[selectedTf]+y;
-		    		//check links
-		    		if (tf_links_.find(tfs[selectedTf])!=tf_links_.end()) {
-		    			int held_object=tf_links_.at(tfs[selectedTf]);
-		    			xtfs[held_object]=xtfs[selectedTf]+0.1;
-		    			ytfs[held_object]=ytfs[selectedTf]+0.1;
+		    		if (selectedTf!=-1) {
+			    		xtfs[selectedTf]=xtfs[selectedTf]+x;
+			    		ytfs[selectedTf]=ytfs[selectedTf]+y;
+			    		//check links
+			    		if (tf_links_.find(tfs[selectedTf])!=tf_links_.end()) {
+			    			int held_object=tf_links_.at(tfs[selectedTf]);
+			    			xtfs[held_object]=xtfs[selectedTf]+0.1;
+			    			ytfs[held_object]=ytfs[selectedTf]+0.1;
+			    		}
 		    		}
 		    	}
 		    	ros::Duration(0.1).sleep();
@@ -237,16 +257,33 @@ int main (int argc, char** argv) {
     ros::NodeHandle n;
 
     string robot_name;
-    n.getParam("simulated_agents",tfs);
+    n.getParam("simulation/simulated_entities",tfs);
     n.getParam("situation_assessment/robot_name",robot_name);
     ROS_INFO("robot name is %s",robot_name.c_str());
 
     ROS_INFO("Got %ld agents",tfs.size());
     for (int i=0; i<tfs.size();i++) {
-        xtfs.push_back(0);
-        ytfs.push_back(0);
-        ztfs.push_back(0);
+    	double x,y,z;
+
+    	n.getParam("simulation/starting_position/"+tfs[i]+"/x",x);
+    	n.getParam("simulation/starting_position/"+tfs[i]+"/y",y);
+    	n.getParam("simulation/starting_position/"+tfs[i]+"/z",z);
+
         ROS_INFO("- %s",tfs[i].c_str());
+        ROS_INFO("Starting position is %f %f %f",x,y,z);
+
+
+    	bool movable;
+
+    	n.getParam("simulation/movable/"+tfs[i],movable);
+
+    	ROS_INFO("Movable is %d",movable);
+
+    	movable_[tfs[i]]=movable;
+
+        xtfs.push_back(x);
+        ytfs.push_back(y);
+        ztfs.push_back(z);
     }
     boost::thread kthread(keyboardLoop);
     boost::thread t(sendPosition);
