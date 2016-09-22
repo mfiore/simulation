@@ -217,7 +217,8 @@ bool putObjectInHand(situation_assessment_msgs::PutObjectInHand::Request& req,
 
 	}
 	else {
-		tf_links_.erase(req.object);
+		ROS_INFO("TFKEYBOARD erasing the link");
+		tf_links_.erase(req.agent);
 		res.result=true;
 	}
 	return true;
