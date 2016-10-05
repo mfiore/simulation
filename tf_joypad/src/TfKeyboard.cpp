@@ -14,6 +14,9 @@ vector<double> xtfs;
 vector<double> ytfs;
 vector<double> ztfs;
 
+vector<double> thetas;
+
+
 int selectedTf=0;
 
 Keyboard keyboard;
@@ -91,7 +94,9 @@ void keyboardLoop() {
 	bool pressed,new_event;
 	uint16_t k, mod;
 	bool select_all=false;
-	double x,y;
+	double x,y,theta;
+	theta=thetas[selectedTf];
+	double pi=3.14;
 	while (ros::ok) {
 		keyboard.get_key(new_event,pressed,k,mod);
 		// if (new_event) {
@@ -132,6 +137,46 @@ void keyboardLoop() {
 		        	x=pressed?-0.1:0;
 		            break;
 		        }
+		        case (SDLK_b):
+		        {
+		        	theta=pi*3/4;
+		            break;
+		        }
+		        case (SDLK_n):
+		        {
+		        	theta=pi/2;;
+		            break;
+		        }
+		        case (SDLK_m):
+		        {
+		        	theta=pi*1/4;
+		            break;
+		        }
+		        case (SDLK_g):
+		        {
+		        	theta=pi;
+		            break;
+		        }
+		        case (SDLK_j):
+		        {
+		        	theta=0;
+		            break;
+		        }
+		        case (SDLK_t):
+		        {
+		        	theta=pi*5/4;
+		            break;
+		        }
+		        case (SDLK_y):
+		        {
+		        	theta=pi*6/4;
+		            break;
+		        }
+		        case (SDLK_u):
+		        {
+		        	theta=pi*7/y;
+		            break;
+		        }
 		    }
 		    	if (select_all) {
 		    		for (int i=0; i<tfs.size();i++) {
@@ -146,6 +191,10 @@ void keyboardLoop() {
 		    		if (selectedTf!=-1) {
 			    		xtfs[selectedTf]=xtfs[selectedTf]+x;
 			    		ytfs[selectedTf]=ytfs[selectedTf]+y;
+			    		if (thetas[selectedTf]!=theta) {
+			    			thetas[selectedTf]=theta;
+			    			ROS_INFO("TFKEYBOARD new theta is %f",theta);
+			    		}
 			    		//check links
 			    		if (tf_links_.find(tfs[selectedTf])!=tf_links_.end()) {
 			    			int held_object=tf_links_.at(tfs[selectedTf]);
@@ -177,7 +226,7 @@ void sendPosition() {
         	transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], ztfs[i]) );
 
         	tf::Quaternion q;
-		    q.setRPY(0, 0, 0);
+		    q.setRPY(0, 0, thetas[i]);
 	    	transform.setRotation(q);
 	        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", tfs[i]));
 	    }
@@ -285,6 +334,7 @@ int main (int argc, char** argv) {
         xtfs.push_back(x);
         ytfs.push_back(y);
         ztfs.push_back(z);
+        thetas.push_back(0);
     }
     boost::thread kthread(keyboardLoop);
     boost::thread t(sendPosition);
