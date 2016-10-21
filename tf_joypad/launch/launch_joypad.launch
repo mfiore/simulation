@@ -1,5 +1,5 @@
 <launch>
-	<rosparam command="load" file="$(find simulation_parameters)/simulation_parameters.yaml" />
+	<rosparam command="load" file="$(find simulation_parameters)/simulation_real_parameters.yaml" />
 	<node name="tf_sim" pkg="tf_joypad" type="tf_keyboard" output="screen" />
 
     

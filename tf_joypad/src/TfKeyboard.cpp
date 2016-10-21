@@ -183,6 +183,7 @@ void keyboardLoop() {
 		    			if (movable_[tfs[i]]) {
 		    				xtfs[i]=xtfs[i]+x;
 		       				ytfs[i]=ytfs[i]+y;
+		       				thetas[i]=theta;
 		       			}
 		       		}
 		    
@@ -217,17 +218,14 @@ void sendPosition() {
             static tf::TransformBroadcaster br;
 	  	    //ROS_INFO("Tf numero %d",i);
 	 		 tf::Transform transform;
-	  		// if (tf_links_.find(tfs[i])!=tf_links_.end()){
-	  		// 	int other_tf=tf_links_[tfs[i]];
-	  		// 	transform.setOrigin(tf::Vector3(xtfs[other_tf],ytfs[other_tf],ztfs[other_tf]));	
-	  		// }
-	  		// else {
-	    //  	}
         	transform.setOrigin( tf::Vector3(xtfs[i], ytfs[i], ztfs[i]) );
 
         	tf::Quaternion q;
 		    q.setRPY(0, 0, thetas[i]);
+	    	q.normalize();
 	    	transform.setRotation(q);
+
+	    	// ROS_INFO("Set quaternion for %s",tfs[i].c_str());
 	        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", tfs[i]));
 	    }
         r.sleep();
@@ -259,6 +257,11 @@ bool putObjectInHand(situation_assessment_msgs::PutObjectInHand::Request& req,
 			xtfs[object_index]=xtfs[agent_index]+0.1;
 			ytfs[object_index]=ytfs[agent_index]+0.1;
 			ztfs[object_index]=ztfs[agent_index];
+		}
+		else if (found_object){
+			xtfs[object_index]=0;
+			ytfs[object_index]=0;
+			ztfs[object_index]=0;
 		}
 		else {
 			res.result=false;
@@ -334,7 +337,7 @@ int main (int argc, char** argv) {
         xtfs.push_back(x);
         ytfs.push_back(y);
         ztfs.push_back(z);
-        thetas.push_back(0);
+        thetas.push_back(50);
     }
     boost::thread kthread(keyboardLoop);
     boost::thread t(sendPosition);
